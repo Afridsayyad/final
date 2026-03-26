@@ -6,10 +6,18 @@ import crypto from "crypto";
 
 dotenv.config();
 
+const app = express();
+app.use(express.json());
+
 const PORT = process.env.PORT || 4000;
+
+// 🔑 ENV VARIABLES
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL;
 const RESEND_FROM_NAME = process.env.RESEND_FROM_NAME || "Quiz Game";
+
+console.log("🔑 API KEY:", RESEND_API_KEY ? "Loaded ✅" : "Missing ❌");
+console.log("📧 FROM EMAIL:", RESEND_FROM_EMAIL);
 
 // 🔥 Firebase init
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -35,17 +43,13 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// 🔴 Check Resend config
+// 🔴 Resend check
 if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
   console.error("❌ Resend not configured properly");
   process.exit(1);
 }
 
 const resend = new Resend(RESEND_API_KEY);
-
-// 🚀 Express app
-const app = express();
-app.use(express.json());
 
 // 🌍 CORS
 app.use((req, res, next) => {
@@ -59,6 +63,24 @@ app.use((req, res, next) => {
 // 🟢 Root
 app.get("/", (req, res) => {
   res.send("Server is running ✅");
+});
+
+// 🧪 TEST EMAIL ROUTE (IMPORTANT)
+app.get("/test-email", async (req, res) => {
+  try {
+    const response = await resend.emails.send({
+      from: `${RESEND_FROM_NAME} <${RESEND_FROM_EMAIL}>`,
+      to: ["afridchand@gmail.com"], // 👈 yaha apna email daal
+      subject: "Test Email ✅",
+      html: "<h1>Resend working 🚀</h1>"
+    });
+
+    console.log("📩 Test Response:", response);
+    res.send("Email sent ✅");
+  } catch (err) {
+    console.error("❌ Test Error:", err);
+    res.send("Error ❌");
+  }
 });
 
 // 🔐 OTP Config
